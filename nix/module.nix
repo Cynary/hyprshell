@@ -217,38 +217,37 @@ in
             };
           };
         };
-        switch = {
-          enable = mkOpt "Enable recent window switcher" bool true;
-          key = mkOpt "Key to open switch" str "Tab";
-          modifier = mkOpt "Modifier key" (enum [
-            "alt"
-            "ctrl"
-            "super"
-          ]) "alt";
-          filter_by = mkOpt "Filter by" (listOf (enum [
-            "same_class"
-            "current_monitor"
-            "current_workspace"
-          ])) [ "current_monitor" ];
-          switch_workspaces = mkOpt "Switch workspaces" bool false;
-          exclude_special_workspaces = mkOpt "Exclude special workspaces regex" str "";
-        };
-        switch_2 = {
-          enable = mkOpt "Enable recent window switcher" bool false;
-          key = mkOpt "Key to open switch" str "Tab";
-          modifier = mkOpt "Modifier key" (enum [
-            "alt"
-            "ctrl"
-            "super"
-          ]) "alt";
-          filter_by = mkOpt "Filter by" (listOf (enum [
-            "same_class"
-            "current_monitor"
-            "current_workspace"
-          ])) [ "current_monitor" ];
-          switch_workspaces = mkOpt "Switch workspaces" bool false;
-          exclude_special_workspaces = mkOpt "Exclude special workspaces regex" str "";
-        };
+        switches = mkOpt "Switch profiles" (listOf (submodule {
+          options = {
+            enable = mkOpt "Enable recent window switcher" bool true;
+            binds = {
+              forward = mkOpt "Forward keybinds" (listOf (submodule {
+                options = {
+                  mods = mkOpt "Modifiers" (listOf (enum [ "alt" "ctrl" "super" "shift" ])) [ "alt" ];
+                  key = mkOpt "Key" str "Tab";
+                  hold_mods = mkOpt "Hold modifiers" (nullOr (listOf (enum [ "alt" "ctrl" "super" ]))) null;
+                };
+              })) [ { mods = [ "alt" ]; key = "Tab"; } ];
+              reverse = mkOpt "Reverse keybinds" (listOf (submodule {
+                options = {
+                  mods = mkOpt "Modifiers" (listOf (enum [ "alt" "ctrl" "super" "shift" ])) [ "alt" "shift" ];
+                  key = mkOpt "Key" str "Tab";
+                  hold_mods = mkOpt "Hold modifiers" (nullOr (listOf (enum [ "alt" "ctrl" "super" ]))) null;
+                };
+              })) [
+                { mods = [ "alt" "shift" ]; key = "Tab"; }
+                { mods = [ "alt" ]; key = "grave"; }
+              ];
+            };
+            filter_by = mkOpt "Filter by" (listOf (enum [
+              "same_class"
+              "current_monitor"
+              "current_workspace"
+            ])) [ "current_monitor" ];
+            switch_workspaces = mkOpt "Switch workspaces" bool false;
+            exclude_special_workspaces = mkOpt "Exclude special workspaces regex" str "";
+          };
+        })) [ ];
       };
     };
   };
@@ -280,7 +279,7 @@ in
         }
       else
         {
-          text = builtins.toJSON ((customLib.filterDisabledAndDropEnable cfg.settings) // { version = 3; });
+          text = builtins.toJSON ((customLib.filterDisabledAndDropEnable cfg.settings) // { version = 4; });
         };
 
     xdg.configFile."hyprshell/styles.css" =

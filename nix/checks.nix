@@ -62,7 +62,9 @@ rec {
             programs.hyprshell.settings = {
               windows.enable = true;
               windows.overview.enable = true;
-              windows.switch.enable = true;
+              windows.switches = [
+                { enable = true; }
+              ];
             };
           }
         ];
@@ -78,7 +80,7 @@ rec {
       echo "test json created at $TMP"
       cat <<EOF> "$TMP/test.json"
       ${builtins.toJSON (
-        (customLib.filterDisabledAndDropEnable empty-config.config.programs.hyprshell.settings) // { version = 3; }
+        (customLib.filterDisabledAndDropEnable empty-config.config.programs.hyprshell.settings) // { version = 4; }
       )}
       EOF
       chmod 444 "$TMP/test.json"
@@ -91,7 +93,7 @@ rec {
       echo "test-2 json created at $TMP"
       cat <<EOF> "$TMP/test-2.json"
       ${builtins.toJSON (
-        (customLib.filterDisabledAndDropEnable test-config.config.programs.hyprshell.settings) // { version = 3; }
+        (customLib.filterDisabledAndDropEnable test-config.config.programs.hyprshell.settings) // { version = 4; }
       )}
       EOF
       chmod 444 "$TMP/test-2.json"

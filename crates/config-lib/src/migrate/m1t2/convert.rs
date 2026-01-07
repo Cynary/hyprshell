@@ -35,14 +35,13 @@ impl From<old_structs::Overview> for m2t3::Overview {
     }
 }
 
-impl From<old_structs::Switch> for crate::Switch {
+impl From<old_structs::Switch> for m2t3::Switch {
     fn from(value: old_structs::Switch) -> Self {
         Self {
             filter_by: value.filter_by,
             modifier: value.modifier.into(),
             key: "tab".into(),
             switch_workspaces: value.show_workspaces,
-            exclude_special_workspaces: "".into(),
         }
     }
 }

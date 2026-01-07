@@ -1,4 +1,5 @@
 use crate::structs::ConfigModifier;
+use config_lib::{KeyCombo, KeyMod};
 use relm4::gtk::gdk::{Cursor, Key, ModifierType};
 use relm4::gtk::prelude::{Cast, EditableExt, WidgetExt};
 use relm4::{adw, gtk};
@@ -111,6 +112,47 @@ pub fn handle_key(val: Key, state: ModifierType) -> Option<(String, ConfigModifi
     Some((key_name.to_string(), modifier, label))
 }
 
+pub fn handle_key_combo(val: Key, state: ModifierType) -> Option<KeyCombo> {
+    if is_modifier_key(val) {
+        return None;
+    }
+    let key_name = normalize_key_name(&val.name()?);
+    let mut mods = Vec::new();
+    if state.contains(ModifierType::CONTROL_MASK) {
+        mods.push(KeyMod::Ctrl);
+    }
+    if state.contains(ModifierType::ALT_MASK) {
+        mods.push(KeyMod::Alt);
+    }
+    if state.contains(ModifierType::SUPER_MASK) {
+        mods.push(KeyMod::Super);
+    }
+    if state.contains(ModifierType::SHIFT_MASK) {
+        mods.push(KeyMod::Shift);
+    }
+    Some(KeyCombo {
+        mods,
+        key: key_name.into_boxed_str(),
+        hold_mods: None,
+    })
+}
+
+pub fn key_combo_label(combo: &KeyCombo) -> String {
+    key_combo_label_parts(&combo.mods, &combo.key)
+}
+
+pub fn key_combo_label_parts(mods: &[KeyMod], key: &str) -> String {
+    if mods.is_empty() {
+        return key.to_string();
+    }
+    let mut parts = mods
+        .iter()
+        .map(|m| m.to_string())
+        .collect::<Vec<_>>();
+    parts.push(key.to_string());
+    parts.join(" + ")
+}
+
 pub fn default_config() -> config_lib::Config {
     config_lib::Config {
         windows: Some(config_lib::Windows::default()),
@@ -145,6 +187,30 @@ pub fn mod_key_to_string(modifier: ConfigModifier, key: &str) -> String {
     } else {
         format!("{modifier} + {key}")
     }
+}
+
+fn normalize_key_name(key: &str) -> String {
+    if key == "ISO_Left_Tab" {
+        "Tab".to_string()
+    } else {
+        key.to_string()
+    }
+}
+
+fn is_modifier_key(key: Key) -> bool {
+    matches!(
+        key,
+        Key::Alt_L
+            | Key::Alt_R
+            | Key::Control_L
+            | Key::Control_R
+            | Key::Shift_L
+            | Key::Shift_R
+            | Key::Super_L
+            | Key::Super_R
+            | Key::Meta_L
+            | Key::Meta_R
+    )
 }
 
 #[macro_export]

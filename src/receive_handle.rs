@@ -51,10 +51,10 @@ fn open_overview(global: &mut Globals, event_sender: &Sender<TransferType>) {
     if let Some(windows) = &mut global.windows {
         if let Some((overview, launcher)) = &mut windows.overview {
             if !windows_lib::overview_already_open(overview)
-                && !&windows
-                    .switch
-                    .as_ref()
-                    .is_some_and(windows_lib::switch_already_open)
+                && !windows
+                    .switches
+                    .iter()
+                    .any(windows_lib::switch_already_open)
             {
                 trace!("Opening overview");
                 windows_lib::open_overview(overview, event_sender)
@@ -82,30 +82,44 @@ fn open_overview(global: &mut Globals, event_sender: &Sender<TransferType>) {
 
 fn open_switch(global: &mut Globals, config: &OpenSwitch) {
     if let Some(windows) = &mut global.windows {
-        if let Some(switch) = &mut windows.switch {
-            if !windows_lib::switch_already_open(switch)
-                && !&windows
-                    .overview
-                    .as_ref()
-                    .is_some_and(|(o, _)| windows_lib::overview_already_open(o))
-            {
-                windows_lib::open_switch(switch, config)
-                    .warn_details("Failed to open switch window");
-            } else {
-                debug!("Switch or Overview already open, converting to SwitchSwitch");
-                windows_lib::update_switch(
-                    switch,
-                    &SwitchSwitchConfig {
-                        direction: if config.reverse {
-                            Direction::Left
-                        } else {
-                            Direction::Right
-                        },
-                    },
-                );
-            }
+        if config.profile >= windows.switches.len() {
+            warn!("Window switch profile {} not active", config.profile);
+            return;
+        }
+        if windows
+            .overview
+            .as_ref()
+            .is_some_and(|(o, _)| windows_lib::overview_already_open(o))
+        {
+            debug!("Overview already open, ignoring switch open");
+            return;
+        }
+        let any_open = windows
+            .switches
+            .iter()
+            .any(windows_lib::switch_already_open);
+        if any_open && windows.active_switch != Some(config.profile) {
+            close_all_switches(windows);
+        }
+        let switch = &mut windows.switches[config.profile];
+        *switch.active_hold_mods.borrow_mut() = config.hold_mods.clone();
+        if !windows_lib::switch_already_open(switch) {
+            windows_lib::open_switch(switch, config)
+                .warn_details("Failed to open switch window");
+            windows.active_switch = Some(config.profile);
         } else {
-            warn!("Window switch not active");
+            debug!("Switch or Overview already open, converting to SwitchSwitch");
+            windows_lib::update_switch(
+                switch,
+                &SwitchSwitchConfig {
+                    direction: if config.reverse {
+                        Direction::Left
+                    } else {
+                        Direction::Right
+                    },
+                },
+            );
+            windows.active_switch = Some(config.profile);
         }
     } else {
         warn!("Windows not active");
@@ -114,7 +128,18 @@ fn open_switch(global: &mut Globals, config: &OpenSwitch) {
 
 fn switch_switch(global: &mut Globals, config: &SwitchSwitchConfig) {
     if let Some(windows) = &mut global.windows {
-        if let Some(switch) = &mut windows.switch {
+        let active_idx = windows.active_switch.or_else(|| {
+            windows
+                .switches
+                .iter()
+                .position(windows_lib::switch_already_open)
+        });
+        let Some(idx) = active_idx else {
+            warn!("Window switch not active");
+            return;
+        };
+        windows.active_switch = Some(idx);
+        if let Some(switch) = windows.switches.get_mut(idx) {
             windows_lib::update_switch(switch, config);
         } else {
             warn!("Window switch not active");
@@ -146,9 +171,7 @@ fn exit(global: &mut Globals) {
             windows_lib::close_overview(overview, None);
             launcher_lib::close_launcher_by_char(launcher, None); // this will never open a program and need the default terminal
         }
-        if let Some(switch) = &mut windows.switch {
-            windows_lib::close_switch(switch, false);
-        }
+        close_all_switches(windows);
     }
 }
 
@@ -198,14 +221,25 @@ fn close_overview(global: &mut Globals, config: CloseOverviewConfig) {
 }
 
 fn close_switch(global: &mut Globals) {
-    if let Some(windows) = &mut global.windows
-        && let Some(switch) = &mut windows.switch
-    {
-        if windows_lib::switch_already_hidden(switch) {
+    if let Some(windows) = &mut global.windows {
+        let active_idx = windows.active_switch.or_else(|| {
+            windows
+                .switches
+                .iter()
+                .position(windows_lib::switch_already_open)
+        });
+        let Some(idx) = active_idx else {
             debug!("Switch is already closed");
             return;
+        };
+        windows.active_switch = Some(idx);
+        if let Some(switch) = windows.switches.get_mut(idx) {
+            if windows_lib::switch_already_hidden(switch) {
+                debug!("Switch is already closed");
+                return;
+            }
+            windows_lib::close_switch(switch, true);
         }
-        windows_lib::close_switch(switch, true);
     }
 }
 
@@ -216,7 +250,7 @@ fn restart(global: &Globals) {
             windows_lib::stop_overview(overview);
             launcher_lib::stop_launcher(launcher);
         }
-        if let Some(switch) = &windows.switch {
+        for switch in &windows.switches {
             windows_lib::stop_switch(switch);
         }
     }
@@ -224,4 +258,13 @@ fn restart(global: &Globals) {
     glib::idle_add_local_once(move || {
         app.quit();
     });
+}
+
+fn close_all_switches(windows: &mut crate::start::WindowsGlobal) {
+    for switch in &mut windows.switches {
+        if !windows_lib::switch_already_hidden(switch) {
+            windows_lib::close_switch(switch, false);
+        }
+    }
+    windows.active_switch = None;
 }

@@ -23,6 +23,12 @@ pub fn migrate(config_file: &Path) -> anyhow::Result<crate::Config> {
                 load_config_file(config_file).context("Failed to load old config")?;
             crate::Config::from(old_config)
         }
+        migrate::m3t4::PREV_CONFIG_VERSION => {
+            info!("Migrating from version {old_version} to new version {CURRENT_CONFIG_VERSION}");
+            let old_config: migrate::m3t4::Config =
+                load_config_file(config_file).context("Failed to load old config")?;
+            crate::Config::from(old_config)
+        }
         _ => bail!("Unsupported old config version {old_version}, cannot migrate"),
     };
     match write_config(config_file, &new_config, true) {

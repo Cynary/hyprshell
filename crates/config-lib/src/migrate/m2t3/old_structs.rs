@@ -24,7 +24,7 @@ pub struct Windows {
     #[default(None)]
     pub overview: Option<Overview>,
     #[default(None)]
-    pub switch: Option<crate::Switch>,
+    pub switch: Option<Switch>,
 }
 
 #[derive(SmartDefault, Debug, Clone, PartialEq, Eq, Deserialize)]
@@ -74,4 +74,17 @@ pub struct Plugins {
     pub websearch: Option<crate::WebSearchConfig>,
     pub calc: Option<crate::EmptyConfig>,
     pub path: Option<crate::EmptyConfig>,
+}
+
+#[derive(SmartDefault, Debug, Clone, PartialEq, Eq, Deserialize)]
+#[serde(default, deny_unknown_fields)]
+pub struct Switch {
+    #[default(crate::Modifier::Alt)]
+    pub modifier: crate::Modifier,
+    #[default = "Tab"]
+    pub key: Box<str>,
+    #[default(vec![crate::FilterBy::CurrentMonitor])]
+    pub filter_by: Vec<crate::FilterBy>,
+    #[default = false]
+    pub switch_workspaces: bool,
 }

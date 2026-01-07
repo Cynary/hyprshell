@@ -280,154 +280,27 @@ pub fn generate_items(changes: &gtk::ListBox, config: &Config, prev_config: &Con
                     );
                 }
             }
-            match (
-                &prev_config.windows.switch.enabled,
-                &config.windows.switch.enabled,
-            ) {
-                (false, false) => {}
-                (true, false) => {
-                    add_info(changes, "Disabled Switch view");
-                }
-                (_, true) => {
-                    if !prev_config.windows.switch.enabled {
-                        add_info(changes, "Enabled Switch view");
-                    }
-
-                    if prev_config.windows.switch.key != config.windows.switch.key {
-                        add_info_subtitle(
-                            changes,
-                            "Changed switch key",
-                            format!(
-                                "{} -> {}",
-                                prev_config.windows.switch.key, config.windows.switch.key
-                            ),
-                        );
-                    }
-                    if prev_config.windows.switch.modifier != config.windows.switch.modifier {
-                        add_info_subtitle(
-                            changes,
-                            "Changed switch modifier",
-                            format!(
-                                "{} -> {}",
-                                prev_config.windows.switch.modifier, config.windows.switch.modifier
-                            ),
-                        );
-                    }
-                    if prev_config.windows.switch.same_class != config.windows.switch.same_class
-                        || prev_config.windows.switch.current_monitor
-                            != config.windows.switch.current_monitor
-                        || prev_config.windows.switch.current_workspace
-                            != config.windows.switch.current_workspace
-                    {
-                        add_info_subtitle(
-                            changes,
-                            "Changed switch filter by",
-                            format!(
-                                "{} -> {}",
-                                flags_csv!(
-                                    prev_config.windows.switch,
-                                    same_class,
-                                    current_monitor,
-                                    current_workspace
-                                ),
-                                flags_csv!(
-                                    config.windows.switch,
-                                    same_class,
-                                    current_monitor,
-                                    current_workspace
-                                ),
-                            ),
-                        );
-                    }
-                    if prev_config.windows.switch.switch_workspaces
-                        != config.windows.switch.switch_workspaces
-                    {
-                        add_info_subtitle(
-                            changes,
-                            "Changed switch switch workspaces",
-                            format!(
-                                "{} -> {}",
-                                prev_config.windows.switch.switch_workspaces,
-                                config.windows.switch.switch_workspaces
-                            ),
-                        );
-                    }
-                }
+            let prev_enabled = prev_config
+                .windows
+                .switches
+                .iter()
+                .filter(|s| s.enabled)
+                .count();
+            let curr_enabled = config
+                .windows
+                .switches
+                .iter()
+                .filter(|s| s.enabled)
+                .count();
+            if prev_enabled != curr_enabled {
+                add_info_subtitle(
+                    changes,
+                    "Changed switch profiles count",
+                    format!("{prev_enabled} -> {curr_enabled}"),
+                );
             }
-            match (
-                &prev_config.windows.switch_2.enabled,
-                &config.windows.switch_2.enabled,
-            ) {
-                (false, false) => {}
-                (true, false) => {
-                    add_info(changes, "Disabled Switch 2 view");
-                }
-                (_, true) => {
-                    if !prev_config.windows.switch_2.enabled {
-                        add_info(changes, "Enabled Switch 2 view");
-                    }
-
-                    if prev_config.windows.switch_2.key != config.windows.switch_2.key {
-                        add_info_subtitle(
-                            changes,
-                            "Changed switch 2 key",
-                            format!(
-                                "{} -> {}",
-                                prev_config.windows.switch_2.key, config.windows.switch_2.key
-                            ),
-                        );
-                    }
-                    if prev_config.windows.switch_2.modifier != config.windows.switch_2.modifier {
-                        add_info_subtitle(
-                            changes,
-                            "Changed switch 2 modifier",
-                            format!(
-                                "{} -> {}",
-                                prev_config.windows.switch_2.modifier,
-                                config.windows.switch_2.modifier
-                            ),
-                        );
-                    }
-                    if prev_config.windows.switch_2.same_class != config.windows.switch_2.same_class
-                        || prev_config.windows.switch_2.current_monitor
-                            != config.windows.switch_2.current_monitor
-                        || prev_config.windows.switch_2.current_workspace
-                            != config.windows.switch_2.current_workspace
-                    {
-                        add_info_subtitle(
-                            changes,
-                            "Changed switch 2 filter by",
-                            format!(
-                                "{} -> {}",
-                                flags_csv!(
-                                    prev_config.windows.switch_2,
-                                    same_class,
-                                    current_monitor,
-                                    current_workspace
-                                ),
-                                flags_csv!(
-                                    config.windows.switch_2,
-                                    same_class,
-                                    current_monitor,
-                                    current_workspace
-                                ),
-                            ),
-                        );
-                    }
-                    if prev_config.windows.switch_2.switch_workspaces
-                        != config.windows.switch_2.switch_workspaces
-                    {
-                        add_info_subtitle(
-                            changes,
-                            "Changed switch 2 switch workspaces",
-                            format!(
-                                "{} -> {}",
-                                prev_config.windows.switch_2.switch_workspaces,
-                                config.windows.switch_2.switch_workspaces
-                            ),
-                        );
-                    }
-                }
+            if prev_config.windows.switches != config.windows.switches {
+                add_info(changes, "Updated switch profiles");
             }
         }
     }

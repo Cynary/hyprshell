@@ -20,9 +20,22 @@ pub enum TransferType {
     /// send from the app itself when new monitor / config changes detected
     Restart,
 }
+
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum HoldMod {
+    Alt,
+    Ctrl,
+    Super,
+}
+
 #[derive(Debug, Serialize, Deserialize)]
 pub struct OpenSwitch {
     pub reverse: bool,
+    #[serde(default)]
+    pub profile: usize,
+    #[serde(default)]
+    pub hold_mods: Vec<HoldMod>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
