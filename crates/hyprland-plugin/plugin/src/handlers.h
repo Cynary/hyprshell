@@ -1,10 +1,12 @@
 #pragma once
 #include <hyprland/src/devices/IPointer.hpp>
+#include <hyprland/src/devices/IKeyboard.hpp>
 #include <hyprland/src/desktop/view/LayerSurface.hpp>
+#include <hyprland/src/event/EventBus.hpp>
 #include <hyprland/src/plugins/PluginAPI.hpp>
 
 
-void onKeyPress(const std::unordered_map<std::string, std::any> &data, SCallbackInfo &info);
+void onKeyPress(const IKeyboard::SKeyEvent &event, Event::SCallbackInfo &info);
 
 void onOpenLayerChange(const PHLLS &window, bool open);
 

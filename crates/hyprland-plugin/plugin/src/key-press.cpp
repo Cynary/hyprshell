@@ -2,6 +2,7 @@
 #include <hyprland/src/plugins/PluginAPI.hpp>
 #include <hyprland/src/devices/IKeyboard.hpp>
 #include <hyprland/src/managers/input/InputManager.hpp>
+#include <hyprland/src/managers/SeatManager.hpp>
 
 #include "globals.h"
 #include "defs.h"
@@ -10,16 +11,14 @@
 // modifier must pre pressed and released without any other keys pressed in between
 bool last_press_was_mod_press = false;
 
-void onKeyPress(const std::unordered_map<std::string, std::any> &data, SCallbackInfo &info) {
-    const auto keyboardIt = data.find("keyboard");
-    const auto eventIt = data.find("event");
-
-    if (keyboardIt != data.end() && eventIt != data.end()) {
-        const auto keyboard = std::any_cast<CSharedPointer<IKeyboard> >(keyboardIt->second);
-        if (g_pInputManager->shouldIgnoreVirtualKeyboard(keyboard)) {
-            return;
-        }
-        const auto event = std::any_cast<IKeyboard::SKeyEvent>(eventIt->second);
+void onKeyPress(const IKeyboard::SKeyEvent &event, Event::SCallbackInfo &info) {
+    const auto keyboard = g_pSeatManager->m_keyboard.lock();
+    if (!keyboard) {
+        return;
+    }
+    if (g_pInputManager->shouldIgnoreVirtualKeyboard(keyboard)) {
+        return;
+    }
         const auto state = keyboard->m_xkbState;
         const uint32_t keycode = event.keycode + 8; // +8 because xkbcommon expects +8 from libinput
         const bool release = event.state == WL_KEYBOARD_KEY_STATE_RELEASED;
@@ -138,5 +137,4 @@ void onKeyPress(const std::unordered_map<std::string, std::any> &data, SCallback
                 sendStringToHyprshellSocket(HYPRSHELL_CLOSE);
             }
         }
-    }
 }
